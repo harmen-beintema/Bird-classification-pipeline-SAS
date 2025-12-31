@@ -8,18 +8,19 @@ spectral analysis using the following techniques:
 - Min/Max Magnitude (or power).
 """
 import numpy as np
+from numpy.typing import ArrayLike
 import pandas as pd
 import scipy.signal as sig
 import matplotlib.pyplot as plt
 
 
-def spectral_density(signal: pd.DataFrame, sampling_rate: int) -> np.ndarray:
+def spectral_density(signal: ArrayLike, sampling_rate: int) -> np.ndarray:
     """
     Compute the Power Spectral Density (PSD) of a signal.
     
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -28,16 +29,16 @@ def spectral_density(signal: pd.DataFrame, sampling_rate: int) -> np.ndarray:
     """
     t = np.arange(len(signal)) / sampling_rate
     n = len(t)
-    fft = np.fft.fft(signal, n=len(t))
+    fft = np.fft.fft(signal, n=len(t)) 
     return fft * np.conj(fft) / n
     
 
-def spectrogram(signal: pd.DataFrame, sampling_rate: int, overlap=400, NFFT: int=5000):
+def spectrogram(signal: ArrayLike, sampling_rate: int, overlap=400, NFFT: int=5000) -> None:
     """
     Plot a spectrogram of a signal
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -49,12 +50,12 @@ def spectrogram(signal: pd.DataFrame, sampling_rate: int, overlap=400, NFFT: int
     plt.show()
 
 
-def plot_psd(signal: pd.DataFrame, sampling_rate: int, first_half: bool):
+def plot_psd(signal: ArrayLike, sampling_rate: int, first_half: bool) -> None:
     """
     Plot the psd of a signal
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -77,13 +78,13 @@ def plot_psd(signal: pd.DataFrame, sampling_rate: int, first_half: bool):
     plt.show()
 
 
-def average_power(signal: pd.DataFrame, sampling_rate: int) -> float:
+def average_power(signal: ArrayLike, sampling_rate: int) -> float:
     """
     Return the average power of the signal.    
     
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -94,13 +95,13 @@ def average_power(signal: pd.DataFrame, sampling_rate: int) -> float:
     return np.mean(spectral_density(signal, sampling_rate))
 
 
-def min_frequency(signal: pd.DataFrame, sampling_rate: int):
+def min_frequency(signal: ArrayLike, sampling_rate: int) -> int:
     """
     Return the min frequency of the signal.    
     
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -110,17 +111,17 @@ def min_frequency(signal: pd.DataFrame, sampling_rate: int):
     """
     t = np.arange(len(signal)) / sampling_rate
     n = len(t)
-    fft = np.fft.fft(signal, n=len(t))
+    fft = np.fft.fft(signal, n=len(t))      # fast fourier transform reveals the frequencies
     return np.min(fft)
 
 
-def max_frequency(signal: pd.DataFrame, sampling_rate: int):
+def max_frequency(signal: ArrayLike, sampling_rate: int) -> int:
     """
     Return the max frequency of the signal.    
     
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -130,17 +131,17 @@ def max_frequency(signal: pd.DataFrame, sampling_rate: int):
     """
     t = np.arange(len(signal)) / sampling_rate
     n = len(t)
-    fft = np.fft.fft(signal, n=len(t))
-    return np.min(fft)
+    fft = np.fft.fft(signal, n=len(t))      # fast fourier transform reveals frequencies
+    return np.max(fft)
 
 
-def min_power(signal: pd.DataFrame, sampling_rate: int):
+def min_power(signal: ArrayLike, sampling_rate: int) -> float:
     """
     Return the min power of the signal.
     
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -152,13 +153,13 @@ def min_power(signal: pd.DataFrame, sampling_rate: int):
     return np.min(psd)
 
 
-def max_power(signal: pd.DataFrame, sampling_rate: int):
+def max_power(signal: ArrayLike, sampling_rate: int) -> float:
     """
     Return the max power of the signal.
     
     Args:
         input:
-            signal : DataFrame
+            signal : ArrayLike
                 An array containing the amplitudes of a signal for each timestep.
             sampling_rate : int
                 The sampling rate of the signal
@@ -170,7 +171,7 @@ def max_power(signal: pd.DataFrame, sampling_rate: int):
     return np.max(psd)
 
 
-def calculate_frequency_metrics(data: pd.DataFrame, sampling_rates: pd.DataFrame, feature_list: list[str]) -> list:
+def calculate_frequency_metrics(data: pd.DataFrame, sampling_rates: pd.DataFrame, feature_list: list[str]) -> tuple[list, list]:
     """
     Compute all frequency metrics for a given signal.
     
@@ -198,12 +199,13 @@ def calculate_frequency_metrics(data: pd.DataFrame, sampling_rates: pd.DataFrame
     results = [[] for _ in range(len(feature_list))]
     targets = []
 
-    for feature in range(len(feature_list)):
-        if feature in metrics.keys():
-            for cls in range(len(data)):
-                for sample in range(len(data.iloc[cls])):
-                    results[feature].append(metrics[feature](data.iloc[cls, sample], sampling_rates.iloc[cls, sample]))
-                    targets.append(cls)
+    for feature in range(len(feature_list)):        # for each chosen feature
+        if feature in metrics.keys():       # if it is a frequency feature
+            for cls in range(len(data)):        # for each class in the dataset
+                for sample in range(len(data.iloc[cls])):       # for each sample in that class
+                    results[feature].append(metrics[feature](data.iloc[cls, sample],
+                                                              sampling_rates.iloc[cls, sample]))     # calculate the features
+                    targets.append(cls)     # add target class at same index
     return results, targets
 
 
